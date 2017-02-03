@@ -95,13 +95,12 @@ class ClientThread(threading.Thread):
         
         log.info("[%s] Serving web page: %s", self.threadName, self.requestedFile)
 
+        # Read file content
         if not os.path.exists(self.requestedFile):
             log.warn("[%s] %s: File not found!", self.threadName, self.requestedFile)
             header = self._generateHeader(404)
             payload = self._generateHTML(404)
-        
-        # Read file content
-        if os.path.exists(self.requestedFile):
+        else:
             try:
                 with open(self.requestedFile, 'rb') as f:
                     header = self._generateHeader(200)
@@ -143,11 +142,11 @@ class ClientThread(threading.Thread):
     
         return header
 
-    def _generateHTML(self):
+    def _generateHTML(self, code):
         html = ""
 
         # Create HTML based on response code
-        if html == 404:
+        if code == 404:
             html += b"<html><body><p>ERROR 404: File not found!</p></body></html>"
     
         return html
