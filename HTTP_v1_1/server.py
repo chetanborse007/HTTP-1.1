@@ -49,9 +49,9 @@ class ClientThread(threading.Thread):
                 clientRequest = bytes.decode(clientRequest)
                 
                 # Determine request method (GET, PUT and TERMINATE are supported)
-                serverIP = clientRequest.split(' ')[0]
-                serverPort = int(clientRequest.split(' ')[1])
-                requestMethod = clientRequest.split(' ')[2]
+#                 serverIP = clientRequest.split(' ')[0]
+#                 serverPort = int(clientRequest.split(' ')[1])
+                requestMethod = clientRequest.split(' ')[0]
                 log.debug("[%s] Request Method: %s", self.threadName, requestMethod)
 
                 # If request method is 'TERMINATE', then break
@@ -59,18 +59,19 @@ class ClientThread(threading.Thread):
                     break
                 
                 # Determine requested URL
-                requestedURL = clientRequest.split(' ')[3]
+                requestedURL = clientRequest.split(' ')[1]
                 
                 # Determine requested File and Arguments.
                 # If no file is specified by the browser,
                 # load index.html by default.
                 if '?' in requestedURL:
                     requestedFile = requestedURL.split('?', 1)[0]
+                    requestedFile = requestedFile.split('/', 1)[1]
                     requestedArgs = requestedURL.split('?', 1)[1]
                 else:
-                    requestedFile = requestedURL
+                    requestedFile = requestedURL.split('/', 1)[1]
                     requestedArgs = None
-                if requestedFile == '/':
+                if requestedFile == '':
                     requestedFile = 'index.html'
                 self.requestedFile = os.path.join(self.www, requestedFile)
                 log.debug("[%s] Requested File: %s", self.threadName, requestedFile)
@@ -116,7 +117,7 @@ class ClientThread(threading.Thread):
                         log.debug("[%s] 1024 bytes were sent.....", self.threadName)
                         self.clientConnection.send(payload)
                         payload = f.read(self.bufferSize)
-                    self.clientConnection.send("END_OF_FILE")
+                    self.clientConnection.send("EOF")
             except Exception as e:
                 log.warn("[%s] %s: IOError!", self.threadName, self.requestedFile)
                 log.debug("[%s] Sending HTTP response!", self.threadName)
