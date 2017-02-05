@@ -25,10 +25,15 @@ class ClientThread(threading.Thread):
                        threadName=None,
                        verbose=None,
                        www=os.getcwd()):
-        threading.Thread.__init__(self, group=threadGroup,
-                                        target=threadTarget,
-                                        name=threadName,
-                                        verbose=verbose)
+        if os.name == "posix":
+            threading.Thread.__init__(self, group=threadGroup,
+                                            target=threadTarget,
+                                            name=threadName,
+                                            verbose=verbose)
+        else:
+            threading.Thread.__init__(self, group=threadGroup,
+                                      target=threadTarget,
+                                      name=threadName)
         self.clientConnection = clientConnection
         self.clientIP = clientIP
         self.clientPort = clientPort
@@ -39,6 +44,7 @@ class ClientThread(threading.Thread):
         self.www = www
 
     def run(self):
+
         try:
             while True:
                 # Receive request from client
@@ -106,20 +112,22 @@ class ClientThread(threading.Thread):
         else:
             try:
                 log.debug("[%s] Sending HTTP response!", self.threadName)
+
                 header = self._generateHeader(200)
                 httpResponse = self._createHTTPResponse(header, payload)
                 self.clientConnection.send(httpResponse)
                 
                 # Send requested file over TCP connection to the client
-                with open(self.requestedFile, 'rb') as f:
+                with open(self.requestedFile, 'r') as f:
                     payload = f.read(self.bufferSize)
                     while payload:
                         log.debug("[%s] 1024 bytes were sent.....", self.threadName)
-                        self.clientConnection.send(payload)
+                        self.clientConnection.send(payload.encode())
                         payload = f.read(self.bufferSize)
-                    self.clientConnection.send("EOF")
+                    self.clientConnection.send("EOF".encode())
             except Exception as e:
                 log.warn("[%s] %s: IOError!", self.threadName, self.requestedFile)
+                log.debug("[%s] %r", self.threadName, e)
                 log.debug("[%s] Sending HTTP response!", self.threadName)
                 header = self._generateHeader(404)
                 payload = self._generateHTML(404)
@@ -130,27 +138,31 @@ class ClientThread(threading.Thread):
         log.info("[%s] Writing to web server: %s", self.threadName, self.requestedFile)
 
         if not os.path.exists(self.requestedFile):
-            open(self.requestedFile, 'wb').close()
+            open(self.requestedFile, 'w').close()
 
         try:
             # Writing to requested file at the server
-            with open(self.requestedFile, 'wb') as f:
+            with open(self.requestedFile, 'w') as f:
                 while True:
                     data = self.clientConnection.recv(self.bufferSize)
                     data = bytes.decode(data)
 
-                    if data.strip() == "EOF":
+                    if data[:-3] == "EOF":
+                        log.debug("[%s] 1024 bytes were written.....", self.threadName)
+                        f.write(data[:-3])
                         break
                     else:
                         log.debug("[%s] 1024 bytes were written.....", self.threadName)
                         f.write(data)
-            
+
             log.debug("[%s] Sending HTTP response!", self.threadName)
             header = self._generateHeader(200, 'PUT')
-            httpResponse = self._createHTTPResponse(header, "")
+
+            httpResponse = self._createHTTPResponse(header, '')
             self.clientConnection.send(httpResponse)
         except Exception as e:
             log.warn("[%s] %s: IOError!", self.threadName, self.requestedFile)
+            log.debug("[%s] %s", self.threadName, e)
             header = self._generateHeader(204, 'PUT')
             payload = self._generateHTML(204)
             httpResponse = self._createHTTPResponse(header, payload)
@@ -158,9 +170,9 @@ class ClientThread(threading.Thread):
     
     def _createHTTPResponse(self, header, payload):
         log.debug("[%s] Creating HTTP server response", self.threadName)
-        httpResponse = header.encode()
+        httpResponse = header
         httpResponse += payload
-        return httpResponse
+        return httpResponse.encode()
 
     def _generateHeader(self, code, method='GET'):
         """
@@ -169,10 +181,11 @@ class ClientThread(threading.Thread):
         header = ""
 
         # Determine response code
-        if code == 200 and method == 'GET':
-            header = 'HTTP/1.1 200 OK\n'
-        elif code == 200 and method == 'PUT':
-            header = 'HTTP/1.1 200 OK File Created\n'
+        if code == 200:
+            if method == 'GET':
+                header = 'HTTP/1.1 200 OK\n'
+            elif method == 'PUT':
+                header = 'HTTP/1.1 200 OK File Created\n'
         elif code == 204:
             header = 'HTTP/1.1 204 No Content\n'
         elif code == 404:
@@ -190,12 +203,14 @@ class ClientThread(threading.Thread):
         html = ""
 
         # Create HTML based on response code
-        if code == 204:
-            html += b"<html><body><p>Status Code 204: No Content!</p></body></html>"
+        if code == 200:
+            html += "<html><body><p>Status Code 200: OK!</p></body></html>"
+        elif code == 204:
+            html += "<html><body><p>Status Code 204: No Content!</p></body></html>"
         elif code == 404:
-            html += b"<html><body><p>ERROR 404: File not found!</p></body></html>"
+            html += "<html><body><p>ERROR 404: File not found!</p></body></html>"
     
-        return html
+        return html.encode()
 
 
 class HTTPServer(object):

@@ -30,8 +30,9 @@ def ServerApp(**args):
     
     try:
         httpServer.start()
-    except:
+    except Exception as e:
         print("Unexpected exception in launching HTTP server!")
+        print(e)
     finally:
         if httpServer:
             httpServer.stop()
@@ -50,8 +51,12 @@ if __name__ == "__main__":
                         help="Server hostname, default: 127.0.0.1")
     parser.add_argument("-p", "--port", type=int, default=8080,
                         help="Server port, default: 8080")
-    parser.add_argument("-w", "--web_server_directory", type=str, default="/My Computer/Academic/Eclipse/workspace/Python/HTTP-v1.1/",
-                        help="Web server directory, default: /My Computer/Academic/Eclipse/workspace/Python/HTTP-v1.1/")
+    # parser.add_argument("-w", "--web_server_directory", type=str, default="/My Computer/Academic/Eclipse/workspace/Python/HTTP-v1.1/",
+    #                     help="Web server directory, default: /My Computer/Academic/Eclipse/workspace/Python/HTTP-v1.1/")
+    parser.add_argument("-w", "--web_server_directory", type=str,
+                        default="E:/PyCharm Community Edition 2016.3.2/HTTP-v1.1/Files/",
+                        help="E:/PyCharm Community Edition 2016.3.2/HTTP-v1.1/Files/")
+
 
     # Read user inputs
     args = vars(parser.parse_args())

@@ -26,45 +26,61 @@ class Socket:
         request = self.command + " /" + self.filename + " HTTP/1.1\nHost: " + self.host + "\n\n" # Building a GET request
         self.socket.send(request.encode()) # TO convert string request into bytes
 
-        result = self.socket.recv(2048)
+        time.sleep(2)
+
+        result = self.socket.recv(50)
+        result = bytes.decode(result)
         print(result)
         
         if "HTTP/1.1 200 OK" in result:
-            with open('ReceivedFile.txt', 'wb') as f:
-                while True:
-                    data = self.socket.recv(1024)
-                    
-                    if data.strip() == "EOF":
-                        break
-                    else:
-                        print('1024 bytes received.....')
-                        f.write(data)
-        
-            print("Displaying ReceivedFile.txt....")
-            with open('ReceivedFile.txt', 'r') as f:
-                print(f.read())
-        
-        self.socket.close() # Closing the TCP connection
+            try:
+                with open('ReceivedFile.txt', 'w') as f:
+                    while True:
+                        data = self.socket.recv(1024)
+                        data = bytes.decode(data)
+
+                        if data[-3:] == "EOF":
+                            print('1024 bytes received.....')
+                            f.write(data[:-3])
+                            break
+                        else:
+                            print('1024 bytes received.....')
+                            f.write(data)
+
+                print("Displaying ReceivedFile.txt....")
+                with open('ReceivedFile.txt', 'r') as f:
+                    print(f.read())
+            except Exception as e:
+                print(e)
+
+            self.socket.close() # Closing the TCP connection
+
 
     def send_put_request(self):
         if os.path.isfile(self.filename): # Checking if the given file is valid
-            # TPDO: Send PUT request first
+            request = self.command + " /" + self.filename + " HTTP/1.1\nHost: " + self.host + "\n\n"  # Building a PUT request
+            self.socket.send(request.encode())  # TO convert string request into bytes
             
             # Wait for some time after sending PUT request
             time.sleep(2)
             
             # Send file over TCP connection to the server
-            filename = os.path.join(os.getcwd(), "ReceivedFile.txt")
-            with open(filename, 'rb') as f:
-                payload = f.read(1024)
-                while payload:
-                    print("1024 bytes were sent.....")
-                    self.socket.send(payload)
+            filename = os.path.join(os.getcwd(), self.filename)
+
+            try:
+                with open(filename, 'rb') as f:
                     payload = f.read(1024)
-                self.clientConnection.send("EOF")
-            
+                    while payload:
+                        print("1024 bytes were sent.....")
+                        self.socket.send(payload)
+                        payload = f.read(1024)
+                    self.socket.send("EOF".encode())
+            except Exception as e:
+                print(e)
+
+            time.sleep(2)
             server_reply = self.socket.recv(2048) # Waiting for server response
-            print(server_reply)
+            print(str(server_reply))
             
             self.socket.close() # Closing the connection
         else:
