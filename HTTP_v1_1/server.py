@@ -146,12 +146,12 @@ class ClientThread(threading.Thread):
                         f.write(data)
             
             log.debug("[%s] Sending HTTP response!", self.threadName)
-            header = self._generateHeader(200, 'POST')
+            header = self._generateHeader(200, 'PUT')
             httpResponse = self._createHTTPResponse(header, "")
             self.clientConnection.send(httpResponse)
         except Exception as e:
             log.warn("[%s] %s: IOError!", self.threadName, self.requestedFile)
-            header = self._generateHeader(204, 'POST')
+            header = self._generateHeader(204, 'PUT')
             payload = self._generateHTML(204)
             httpResponse = self._createHTTPResponse(header, payload)
             self.clientConnection.send(httpResponse)
