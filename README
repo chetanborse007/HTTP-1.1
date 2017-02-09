@@ -1,1 +1,24 @@
-README
+# RESUME MATCHER
+
+## DESCRIPTION
+This application creates an inverted index over all available resumes. It then performs query search, 
+once a particular keyword is given. Finally, it outputs top resumes matching a given keyword.
+
+
+## INSTRUCTION
+1. cd ResumeMatcher/
+2. Copy all the resumes into './input/' folder.
+3. Set r+w+x permissions for ‘run.sh’ (i.e. chmod 777 run.sh).
+4. Execute ‘run.sh’ file. (Note: You may have to execute doc2unix command 
+   on shell script file before executing it.)
+
+Note: You can change any parameter set in shell script file and accordingly 
+      you will get the results.
+
+
+## RUN APPLICATION
+java -cp .:ext/lucene-analyzers-common-6.2.1.jar:ext/lucene-core-6.2.1.jar:./ext/lucene-queryparser-6.2.1.jar:ResumeMatcher.jar org.myorg.ResumeMatcher.ResumeMatcher "./inverted_ind
+ex" "./input" <Keywords to be searched>
+
+e.g.
+java -cp .:ext/lucene-analyzers-common-6.2.1.jar:ext/lucene-core-6.2.1.jar:./ext/lucene-queryparser-6.2.1.jar:ResumeMatcher.jar org.myorg.ResumeMatcher.ResumeMatcher "./inverted_index" "./input" "java"
