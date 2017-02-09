@@ -44,7 +44,6 @@ class ClientThread(threading.Thread):
         self.www = www
 
     def run(self):
-
         try:
             while True:
                 # Receive request from client
@@ -112,17 +111,16 @@ class ClientThread(threading.Thread):
         else:
             try:
                 log.debug("[%s] Sending HTTP response!", self.threadName)
-
                 header = self._generateHeader(200)
                 httpResponse = self._createHTTPResponse(header, payload)
                 self.clientConnection.send(httpResponse)
                 
                 # Send requested file over TCP connection to the client
-                with open(self.requestedFile, 'r') as f:
+                with open(self.requestedFile, 'rb') as f:
                     payload = f.read(self.bufferSize)
                     while payload:
                         log.debug("[%s] 1024 bytes were sent.....", self.threadName)
-                        self.clientConnection.send(payload.encode())
+                        self.clientConnection.send(payload)
                         payload = f.read(self.bufferSize)
                     self.clientConnection.send("EOF".encode())
             except Exception as e:
@@ -154,11 +152,10 @@ class ClientThread(threading.Thread):
                     else:
                         log.debug("[%s] 1024 bytes were written.....", self.threadName)
                         f.write(data)
-
+            
             log.debug("[%s] Sending HTTP response!", self.threadName)
             header = self._generateHeader(200, 'PUT')
-
-            httpResponse = self._createHTTPResponse(header, '')
+            httpResponse = self._createHTTPResponse(header, "")
             self.clientConnection.send(httpResponse)
         except Exception as e:
             log.warn("[%s] %s: IOError!", self.threadName, self.requestedFile)
@@ -181,11 +178,10 @@ class ClientThread(threading.Thread):
         header = ""
 
         # Determine response code
-        if code == 200:
-            if method == 'GET':
-                header = 'HTTP/1.1 200 OK\n'
-            elif method == 'PUT':
-                header = 'HTTP/1.1 200 OK File Created\n'
+        if code == 200 and method == 'GET':
+            header = 'HTTP/1.1 200 OK\n'
+        elif code == 200 and method == 'PUT':
+            header = 'HTTP/1.1 200 OK File Created\n'
         elif code == 204:
             header = 'HTTP/1.1 204 No Content\n'
         elif code == 404:
@@ -204,13 +200,13 @@ class ClientThread(threading.Thread):
 
         # Create HTML based on response code
         if code == 200:
-            html += "<html><body><p>Status Code 200: OK!</p></body></html>"
+            html += b"<html><body><p>Status Code 200: OK!</p></body></html>"
         elif code == 204:
-            html += "<html><body><p>Status Code 204: No Content!</p></body></html>"
+            html += b"<html><body><p>Status Code 204: No Content!</p></body></html>"
         elif code == 404:
-            html += "<html><body><p>ERROR 404: File not found!</p></body></html>"
+            html += b"<html><body><p>ERROR 404: File not found!</p></body></html>"
     
-        return html.encode()
+        return html
 
 
 class HTTPServer(object):

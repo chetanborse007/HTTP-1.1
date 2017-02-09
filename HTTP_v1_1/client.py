@@ -28,7 +28,7 @@ class Socket:
 
         time.sleep(2)
 
-        result = self.socket.recv(50)
+        result = self.socket.recv(2048)
         result = bytes.decode(result)
         print(result)
         
@@ -66,7 +66,6 @@ class Socket:
             
             # Send file over TCP connection to the server
             filename = os.path.join(os.getcwd(), self.filename)
-
             try:
                 with open(filename, 'rb') as f:
                     payload = f.read(1024)
@@ -79,6 +78,7 @@ class Socket:
                 print(e)
 
             time.sleep(2)
+			
             server_reply = self.socket.recv(2048) # Waiting for server response
             print(str(server_reply))
             
