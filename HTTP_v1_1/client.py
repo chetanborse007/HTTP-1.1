@@ -10,6 +10,14 @@ logging.basicConfig(level=logging.DEBUG,
 log = logging.getLogger()
 
 
+class ConnectionError(Exception):
+    pass
+
+
+class RequestError(Exception):
+    pass
+
+
 class HTTPClient:
 
     def __init__(self, clientIP, 
@@ -29,7 +37,8 @@ class HTTPClient:
         try:
             self.clientSocket.connect((serverIP, serverPort)) 
         except Exception as e:
-            print("Something is wrong with %s and %d: %s" % (serverIP, serverPort, e))
+            print(e)
+            raise ConnectionError("[%s:%d] Connection with HTTP server failed!" % (serverIP, serverPort))
 
     def request(self, method, filename):
         if method == "GET":
@@ -65,11 +74,12 @@ class HTTPClient:
                             f.write(data)
             except Exception as e:
                 print(e)
+                raise RequestError("[%s] HTTP request failed!" % (method,))
 
     def put(self, method, filename):
         # Checking if the given file is valid
         if not os.path.isfile(self.filename):
-            raise IOError("File does not exist!")
+            raise RequestError("[%s] File does not exist!" % (method,))
         
         # Building a PUT request
         request = (method + " /" + filename + " HTTP/1.1\n" +
@@ -93,6 +103,7 @@ class HTTPClient:
                 self.clientSocket.send("EOF".encode())
         except Exception as e:
             print(e)
+            raise RequestError("[%s] HTTP request failed!" % (method,))
 
         time.sleep(2)
 		

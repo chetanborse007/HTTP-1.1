@@ -3,6 +3,8 @@ import os
 import argparse
 
 from HTTP_v1_1.client import HTTPClient
+from HTTP_v1_1.client import ConnectionError
+from HTTP_v1_1.client import RequestError
 
 
 def ClientApp(**args):
@@ -19,8 +21,14 @@ def ClientApp(**args):
     try:
         httpClient.connect(serverIP, serverPort)
         httpClient.request(method, filename)
-    except Exception as e:
+    except ConnectionError as e:
         print("Unexpected exception in establishing connection with HTTP server!")
+        print(e)
+    except RequestError as e:
+        print("Unexpected exception in http request to HTTP server!")
+        print(e)
+    except Exception as e:
+        print("Unexpected exception!")
         print(e)
     finally:
         if httpClient:
