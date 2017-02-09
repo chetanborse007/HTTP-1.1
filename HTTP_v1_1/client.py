@@ -34,7 +34,7 @@ class Socket:
         
         if "HTTP/1.1 200 OK" in result:
             try:
-                with open('ReceivedFile.txt', 'w') as f:
+                with open('ReceivedFile.txt', 'wb') as f:
                     while True:
                         data = self.socket.recv(1024)
                         data = bytes.decode(data)
