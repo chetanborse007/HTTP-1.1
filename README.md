@@ -1,8 +1,8 @@
-# HTTP-v1.1
+# HTTP v1.1
 
 
 ## DESCRIPTION
-Implementation of an HTTP Client and Server that run a simplified version of HTTP/1.1
+Implementation of a multithreaded HTTP Server and HTTP Client that run a simplified version of HTTP/1.1
 
 Methods supported:
   1. GET
