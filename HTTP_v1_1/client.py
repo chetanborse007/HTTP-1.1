@@ -1,88 +1,107 @@
-import socket
 import os
 import time
+import logging
+import socket
 
 
-class Socket:
-    def __init__(self,host,port,command,filename):
-        #Initializing hostname, port number, method and filename
-        self.host = host
-        self.port = int(port)
-        self.command = command
-        self.filename = filename
+# Set logging
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s HTTPClient [%(levelname)s] %(message)s',)
+log = logging.getLogger()
+
+
+class HTTPClient:
+
+    def __init__(self, clientIP, 
+                       clientPort,
+                       clientDirectory=os.path.join(os.getcwd(), "data", "client")):
+        self.clientIP = clientIP
+        self.clientPort = clientPort
+        self.clientDirectory = clientDirectory
 
         # Creating a socket
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    def make_connection(self):
+    def connect(self, serverIP, serverPort):
+        """
+        Connect to the server.
+        """
         try:
-            self.socket.connect((self.host,self.port)) # Connecting with the server
-
+            self.clientSocket.connect((serverIP, serverPort)) 
         except Exception as e:
-            print("Something is wrong with %s and %d: %s" % (self.host,self.port,e))
+            print("Something is wrong with %s and %d: %s" % (serverIP, serverPort, e))
 
-
-    def send_get_request(self):
-        request = self.command + " /" + self.filename + " HTTP/1.1\nHost: " + self.host + "\n\n" # Building a GET request
-        self.socket.send(request.encode()) # TO convert string request into bytes
-
-        time.sleep(2)
-
-        result = self.socket.recv(2048)
-        result = result.decode('utf-8')
-        print(result)
+    def request(self, method, filename):
+        if method == "GET":
+            self.get(method, filename)
+        elif method == "PUT":
+            self.put(method, filename)
+    
+    def get(self, method, filename):
+        # Building a GET request
+        request = (method + " /" + filename + " HTTP/1.1\n" +
+                   "Host: " + self.clientIP + "\n\n")
         
-        if "HTTP/1.1 200 OK" in result:
+        # Send request to server
+        self.clientSocket.send(request.encode())
+        
+        # Receive server response
+        response = self.clientSocket.recv(2048)
+        response = response.decode('utf-8')
+        print(response)
+        
+        # Start fetching file, if GET is successful
+        if "HTTP/1.1 200 OK" in response:
             try:
-                with open('ReceivedFile.txt', 'wb') as f:
+                file = os.path.join(self.clientDirectory, filename)
+                with open(file, 'wb') as f:
                     while True:
-                        data = self.socket.recv(1024)
-                        data = bytes.decode(data)
-
-                        if data[-3:] == "EOF":
-                            print('1024 bytes received.....')
-                            f.write(data[:-3])
+                        data = self.clientSocket.recv(1024)
+                    
+                        if data.strip() == "EOF":
                             break
                         else:
                             print('1024 bytes received.....')
                             f.write(data)
-
-                print("Displaying ReceivedFile.txt....")
-                with open('ReceivedFile.txt', 'r') as f:
-                    print(f.read())
             except Exception as e:
                 print(e)
 
-            self.socket.close() # Closing the TCP connection
-
-
-    def send_put_request(self):
-        if os.path.isfile(self.filename): # Checking if the given file is valid
-            request = self.command + " /" + self.filename + " HTTP/1.1\nHost: " + self.host + "\n\n"  # Building a PUT request
-            self.socket.send(request.encode())  # TO convert string request into bytes
-            
-            # Wait for some time after sending PUT request
-            time.sleep(2)
-            
-            # Send file over TCP connection to the server
-            filename = os.path.join(os.getcwd(), self.filename)
-            try:
-                with open(filename, 'rb') as f:
+    def put(self, method, filename):
+        # Checking if the given file is valid
+        if not os.path.isfile(self.filename):
+            raise IOError("File does not exist!")
+        
+        # Building a PUT request
+        request = (method + " /" + filename + " HTTP/1.1\n" +
+                   "Host: " + self.clientIP + "\n\n")
+        
+        # Send request to server
+        self.clientSocket.send(request.encode())
+        
+        # Wait for some time after sending PUT request
+        time.sleep(2)
+        
+        # Send file over TCP connection to the server
+        try:
+            file = os.path.join(self.clientDirectory, filename)
+            with open(file, 'rb') as f:
+                payload = f.read(1024)
+                while payload:
+                    print("1024 bytes were sent.....")
+                    self.clientSocket.send(payload)
                     payload = f.read(1024)
-                    while payload:
-                        print("1024 bytes were sent.....")
-                        self.socket.send(payload)
-                        payload = f.read(1024)
-                    self.socket.send("EOF".encode())
-            except Exception as e:
-                print(e)
+                self.clientSocket.send("EOF".encode())
+        except Exception as e:
+            print(e)
 
-            time.sleep(2)
-			
-            server_reply = self.socket.recv(2048) # Waiting for server response
-            print(str(server_reply))
-            
-            self.socket.close() # Closing the connection
-        else:
-            print("Invalid file.")
-            self.socket.close()
+        time.sleep(2)
+		
+        response = self.clientSocket.recv(2048)
+        print(str(response))
+    
+    def close(self):
+        """
+        Close the TCP connection.
+        """
+        self.clientSocket.close()
+

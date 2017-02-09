@@ -45,49 +45,44 @@ class ClientThread(threading.Thread):
 
     def run(self):
         try:
-            while True:
-                # Receive request from client
-                log.info("[%s] Receiving client request", self.threadName)
-                clientRequest = self.clientConnection.recv(self.bufferSize)
-    
-                # Decode client request to string
-                clientRequest = bytes.decode(clientRequest)
-                
-                # Determine request method (GET, PUT and TERMINATE are supported)
-#                 serverIP = clientRequest.split(' ')[0]
-#                 serverPort = int(clientRequest.split(' ')[1])
-                requestMethod = clientRequest.split(' ')[0]
-                log.debug("[%s] Request Method: %s", self.threadName, requestMethod)
+            # Receive request from client
+            log.info("[%s] Receiving client request", self.threadName)
+            clientRequest = self.clientConnection.recv(self.bufferSize)
 
-                # If request method is 'TERMINATE', then break
-                if requestMethod == "TERMINATE":
-                    break
-                
-                # Determine requested URL
-                requestedURL = clientRequest.split(' ')[1]
-                
-                # Determine requested File and Arguments.
-                # If no file is specified by the browser,
-                # load index.html by default.
-                if '?' in requestedURL:
-                    requestedFile = requestedURL.split('?', 1)[0]
-                    requestedFile = requestedFile.split('/', 1)[1]
-                    requestedArgs = requestedURL.split('?', 1)[1]
-                else:
-                    requestedFile = requestedURL.split('/', 1)[1]
-                    requestedArgs = None
-                if requestedFile == '':
-                    requestedFile = 'index.html'
-                self.requestedFile = os.path.join(self.www, requestedFile)
-                log.debug("[%s] Requested File: %s", self.threadName, requestedFile)
-                log.debug("[%s] Requested Arguments: %s", self.threadName, requestedArgs)
+            # Decode client request to string
+            clientRequest = bytes.decode(clientRequest)
+            
+            # Determine request method (GET, PUT and TERMINATE are supported)
+#            serverIP = clientRequest.split(' ')[0]
+#            serverPort = int(clientRequest.split(' ')[1])
+            requestMethod = clientRequest.split(' ')[0]
+            log.debug("[%s] Request Method: %s", self.threadName, requestMethod)
 
-                if requestMethod == 'GET':
-                    self._handleGET()
-                elif requestMethod == 'PUT':
-                    self._handlePUT()
-                else:
-                    log.warn("[%s] Unknown HTTP request method: %s", self.threadName, requestMethod)
+            # Determine requested URL
+            requestedURL = clientRequest.split(' ')[1]
+            
+            # Determine requested File and Arguments.
+            # If no file is specified by the browser,
+            # load index.html by default.
+            if '?' in requestedURL:
+                requestedFile = requestedURL.split('?', 1)[0]
+                requestedFile = requestedFile.split('/', 1)[1]
+                requestedArgs = requestedURL.split('?', 1)[1]
+            else:
+                requestedFile = requestedURL.split('/', 1)[1]
+                requestedArgs = None
+            if requestedFile == '':
+                requestedFile = 'index.html'
+            self.requestedFile = os.path.join(self.www, requestedFile)
+            log.debug("[%s] Requested File: %s", self.threadName, requestedFile)
+            log.debug("[%s] Requested Arguments: %s", self.threadName, requestedArgs)
+
+            if requestMethod == 'GET':
+                self._handleGET()
+            elif requestMethod == 'PUT':
+                self._handlePUT()
+            else:
+                log.warn("[%s] Unknown HTTP request method: %s", self.threadName, requestMethod)
         except:
             log.error("[%s] Problem handling client request [%s]", self.threadName, clientRequest)
         
@@ -145,9 +140,7 @@ class ClientThread(threading.Thread):
                     data = self.clientConnection.recv(self.bufferSize)
                     data = bytes.decode(data)
 
-                    if data[:-3] == "EOF":
-                        log.debug("[%s] 1024 bytes were written.....", self.threadName)
-                        f.write(data[:-3])
+                    if data.strip() == "EOF":
                         break
                     else:
                         log.debug("[%s] 1024 bytes were written.....", self.threadName)
