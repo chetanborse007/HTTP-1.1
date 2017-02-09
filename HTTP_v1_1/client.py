@@ -47,8 +47,10 @@ class HTTPClient:
             self.put(method, filename)
     
     def get(self, method, filename):
+        file = os.path.join(self.clientDirectory, filename)
+
         # Building a GET request
-        request = (method + " /" + filename + " HTTP/1.1\n" +
+        request = (method + " /" + file.rsplit(os.sep, 1)[1] + " HTTP/1.1\n" +
                    "Host: " + self.clientIP + "\n\n")
         
         # Send request to server
@@ -62,12 +64,11 @@ class HTTPClient:
         # Start fetching file, if GET is successful
         if "HTTP/1.1 200 OK" in response:
             try:
-                file = os.path.join(self.clientDirectory, filename)
                 with open(file, 'wb') as f:
                     while True:
                         data = self.clientSocket.recv(1024)
                     
-                        if data.strip() == "EOF":
+                        if data.decode("utf-8").strip() == u"EOF":
                             break
                         else:
                             print('1024 bytes received.....')
@@ -77,12 +78,14 @@ class HTTPClient:
                 raise RequestError("[%s] HTTP request failed!" % (method,))
 
     def put(self, method, filename):
+        file = os.path.join(self.clientDirectory, filename)
+
         # Checking if the given file is valid
-        if not os.path.isfile(self.filename):
+        if not os.path.isfile(file):
             raise RequestError("[%s] File does not exist!" % (method,))
         
         # Building a PUT request
-        request = (method + " /" + filename + " HTTP/1.1\n" +
+        request = (method + " /" + file.rsplit(os.sep, 1)[1] + " HTTP/1.1\n" +
                    "Host: " + self.clientIP + "\n\n")
         
         # Send request to server
@@ -93,13 +96,15 @@ class HTTPClient:
         
         # Send file over TCP connection to the server
         try:
-            file = os.path.join(self.clientDirectory, filename)
             with open(file, 'rb') as f:
                 payload = f.read(1024)
                 while payload:
                     print("1024 bytes were sent.....")
                     self.clientSocket.send(payload)
                     payload = f.read(1024)
+                
+                time.sleep(2)
+                
                 self.clientSocket.send("EOF".encode())
         except Exception as e:
             print(e)

@@ -117,6 +117,9 @@ class ClientThread(threading.Thread):
                         log.debug("[%s] 1024 bytes were sent.....", self.threadName)
                         self.clientConnection.send(payload)
                         payload = f.read(self.bufferSize)
+                    
+                    time.sleep(2)
+                    
                     self.clientConnection.send("EOF".encode())
             except Exception as e:
                 log.warn("[%s] %s: IOError!", self.threadName, self.requestedFile)
@@ -131,21 +134,20 @@ class ClientThread(threading.Thread):
         log.info("[%s] Writing to web server: %s", self.threadName, self.requestedFile)
 
         if not os.path.exists(self.requestedFile):
-            open(self.requestedFile, 'w').close()
+            open(self.requestedFile, 'wb').close()
 
         try:
             # Writing to requested file at the server
-            with open(self.requestedFile, 'w') as f:
+            with open(self.requestedFile, 'wb') as f:
                 while True:
                     data = self.clientConnection.recv(self.bufferSize)
-                    data = bytes.decode(data)
 
-                    if data.strip() == "EOF":
+                    if data.decode("utf-8").strip() == u"EOF":
                         break
                     else:
                         log.debug("[%s] 1024 bytes were written.....", self.threadName)
                         f.write(data)
-            
+
             log.debug("[%s] Sending HTTP response!", self.threadName)
             header = self._generateHeader(200, 'PUT')
             httpResponse = self._createHTTPResponse(header, "")
