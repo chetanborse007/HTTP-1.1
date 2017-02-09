@@ -44,6 +44,9 @@ class ClientThread(threading.Thread):
         self.www = www
 
     def run(self):
+        """
+        Request handler.
+        """
         try:
             # Receive request from client
             log.info("[%s] Receiving client request", self.threadName)
@@ -91,6 +94,9 @@ class ClientThread(threading.Thread):
         self.clientConnection.close()
 
     def _handleGET(self):
+        """
+        Handle GET.
+        """
         header = ""
         payload = ""
         
@@ -131,6 +137,9 @@ class ClientThread(threading.Thread):
                 self.clientConnection.send(httpResponse)
 
     def _handlePUT(self):
+        """
+        Handle PUT.
+        """
         log.info("[%s] Writing to web server: %s", self.threadName, self.requestedFile)
 
         if not os.path.exists(self.requestedFile):
@@ -191,6 +200,9 @@ class ClientThread(threading.Thread):
         return header
 
     def _generateHTML(self, code):
+        """
+        Generates HTML page as a payload for a HTTP response.
+        """
         html = ""
 
         # Create HTML based on response code

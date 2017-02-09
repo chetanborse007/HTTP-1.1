@@ -1,4 +1,3 @@
-import sys
 import os
 import argparse
 
@@ -16,7 +15,7 @@ def ClientApp(**args):
     filename = args["filename"]
     clientDirectory = args["client_directory"]
     
-    httpClient = HTTPClient(serverIP, clientPort, clientDirectory)
+    httpClient = HTTPClient(clientIP, clientPort, clientDirectory)
     
     try:
         httpClient.connect(serverIP, serverPort)
