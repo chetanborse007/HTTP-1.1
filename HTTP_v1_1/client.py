@@ -29,7 +29,7 @@ class Socket:
         time.sleep(2)
 
         result = self.socket.recv(2048)
-        result = bytes.decode(result)
+        result = result.decode('utf-8')
         print(result)
         
         if "HTTP/1.1 200 OK" in result:
