@@ -207,11 +207,11 @@ class ClientThread(threading.Thread):
 
         # Create HTML based on response code
         if code == 200:
-            html += b"<html><body><p>Status Code 200: OK!</p></body></html>"
+            html += "<html><body><p>Status Code 200: OK!</p></body></html>"
         elif code == 204:
-            html += b"<html><body><p>Status Code 204: No Content!</p></body></html>"
+            html += "<html><body><p>Status Code 204: No Content!</p></body></html>"
         elif code == 404:
-            html += b"<html><body><p>ERROR 404: File not found!</p></body></html>"
+            html += "<html><body><p>ERROR 404: File not found!</p></body></html>"
     
         return html
 
